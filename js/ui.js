@@ -44,6 +44,7 @@ function showAch(l, e){
 
 // ===== UI 数据刷新 =====
 function updateUI(){
+  // 桌面端 UI
   document.getElementById('sv-c').textContent  = G.coins;
   document.getElementById('sv-lv').textContent = 'Lv.'+G.lv;
   document.getElementById('ebar').style.width  = (G.exp/G.expMax*100)+'%';
@@ -58,11 +59,29 @@ function updateUI(){
   if(G.combo>=3) ce.textContent='x'+G.combo+' 🔥';
   else           ce.textContent='';
 
+  // 手机端状态栏同步
+  const mobCoins = document.getElementById('mob-coins');
+  if(mobCoins){
+    mobCoins.textContent = G.coins;
+    document.getElementById('mob-lv').textContent  = 'Lv.'+G.lv;
+    document.getElementById('mob-ebar').style.width= (G.exp/G.expMax*100)+'%';
+    document.getElementById('mob-hap').textContent = G.hap>=70?'😸':G.hap>=40?'😐':'😿';
+    document.getElementById('mob-hbar').style.width= G.hap+'%';
+    document.getElementById('mob-cus').textContent = G.totalCus;
+    document.getElementById('mob-done').textContent= G.done+'单';
+    // 连击
+    const ct = document.getElementById('mob-combo-txt');
+    if(ct) ct.textContent = G.combo>=3 ? 'x'+G.combo+' 🔥 连击！' : '';
+    // 亲密度
+    const bt = document.getElementById('mob-bond-txt');
+    if(bt) bt.textContent = '🐱 亲密度 '+G.catBond;
+  }
+
   // 菜品解锁
-  if(G.lv>=3){ unlockItem('parfait','⏱ 4秒'); }
-  if(G.lv>=5){ unlockItem('catcookie','⏱ 3秒'); }
-  if(G.lv>=7){ unlockItem('pudding','⏱ 4.5秒'); }
-  if(G.lv>=9){ unlockItem('waffle','⏱ 5秒'); }
+  if(G.lv>=3){ unlockItem('parfait','⏱ 4秒'); unlockMobItem('parfait'); }
+  if(G.lv>=5){ unlockItem('catcookie','⏱ 3秒'); unlockMobItem('catcookie'); }
+  if(G.lv>=7){ unlockItem('pudding','⏱ 4.5秒'); unlockMobItem('pudding'); }
+  if(G.lv>=9){ unlockItem('waffle','⏱ 5秒'); unlockMobItem('waffle'); }
 
   // 猫咪亲密度
   updateBondUI();
@@ -72,6 +91,11 @@ function updateUI(){
 
   // 商店按钮状态
   updateShopButtons();
+}
+
+function unlockMobItem(key){
+  const el = document.getElementById('mob-mi-'+key);
+  if(el) el.classList.remove('dis');
 }
 
 function unlockItem(key, timeText){
@@ -134,9 +158,15 @@ function doLevelUp(){
 function selItem(k){
   if(ITEMS[k].lv>G.lv)return;
   G.sel = k;
+  // 桌面端菜单
   document.querySelectorAll('.mi').forEach(m=>{
     if(m.id==='mi-'+k) m.classList.add('sel');
     else               m.classList.remove('sel');
+  });
+  // 手机端底部菜单
+  document.querySelectorAll('.mob-mi').forEach(m=>{
+    if(m.id==='mob-mi-'+k) m.classList.add('sel');
+    else                    m.classList.remove('sel');
   });
 }
 

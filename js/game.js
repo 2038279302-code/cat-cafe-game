@@ -241,6 +241,11 @@ function bindCanvasEvents(){
 function startGame(){
   document.getElementById('ss').style.display='none';
   document.getElementById('ctrl-row').style.display='flex';
+  // 手机端专属区域显示（CSS 已控制，但 style.display 可能被覆盖，确保可见）
+  if(window.innerWidth <= 600){
+    const els = ['mob-statusbar','mob-combo-bar','mob-canvas-wrap','mob-menu'];
+    els.forEach(id=>{ const e=document.getElementById(id); if(e) e.style.removeProperty('display'); });
+  }
   G.running=true; G.paused=false;
   G.lastCusT=performance.now(); lastTime=performance.now();
   showMsg('欢迎光临！选好菜品，等顾客来吧 🌸');
@@ -345,6 +350,7 @@ function returnToTitle(){
 // ===== 重新开始 =====
 function restartGame(){
   resetG();
+  // 桌面菜单重置
   document.querySelectorAll('.mi').forEach(m=>m.classList.remove('sel'));
   document.getElementById('mi-latte').classList.add('sel');
   ['parfait','catcookie','pudding','waffle'].forEach(k=>{
@@ -353,10 +359,15 @@ function restartGame(){
   });
   document.getElementById('mi-parfait').querySelector('.it').textContent='🔒 Lv.3';
   document.getElementById('mi-catcookie').querySelector('.it').textContent='🔒 Lv.5';
-  const pu=document.getElementById('mi-pudding');
-  if(pu) pu.querySelector('.it').textContent='🔒 Lv.7';
-  const wa=document.getElementById('mi-waffle');
-  if(wa) wa.querySelector('.it').textContent='🔒 Lv.9';
+  const pu=document.getElementById('mi-pudding'); if(pu) pu.querySelector('.it').textContent='🔒 Lv.7';
+  const wa=document.getElementById('mi-waffle');  if(wa) wa.querySelector('.it').textContent='🔒 Lv.9';
+  // 手机底部菜单重置
+  document.querySelectorAll('.mob-mi').forEach(m=>m.classList.remove('sel'));
+  const mobLatte = document.getElementById('mob-mi-latte');
+  if(mobLatte) mobLatte.classList.add('sel');
+  ['parfait','catcookie','pudding','waffle'].forEach(k=>{
+    const m=document.getElementById('mob-mi-'+k); if(m) m.classList.add('dis');
+  });
   document.getElementById('pause-overlay').classList.remove('show');
   document.getElementById('btn-pause').textContent='⏸ 暂停';
   document.getElementById('btn-pause').classList.remove('pause-active');

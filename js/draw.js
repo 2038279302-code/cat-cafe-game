@@ -10,6 +10,21 @@ function initCanvas(){
   cv = document.getElementById('cv');
   ctx = cv.getContext('2d');
   ctx.imageSmoothingEnabled = false;
+
+  // 根据屏幕宽度将 canvas 插入正确容器
+  function placeCanvas(){
+    if(window.innerWidth <= 600){
+      // 手机端：canvas 在 mob-canvas-wrap 里
+      const wrap = document.getElementById('mob-canvas-wrap');
+      if(wrap && cv.parentNode !== wrap) wrap.appendChild(cv);
+    } else {
+      // 桌面端：canvas 在 gc 三列中间占位 div 里
+      const placeholder = document.getElementById('cv-placeholder');
+      if(placeholder && cv.parentNode !== placeholder) placeholder.appendChild(cv);
+    }
+  }
+  placeCanvas();
+  window.addEventListener('resize', placeCanvas);
 }
 
 // ===== 基础绘图工具 =====

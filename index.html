@@ -34,7 +34,7 @@
     <div class="how-card">
       <div class="how-icon">☕</div>
       <div class="how-title">① 选择菜品</div>
-      <div class="how-desc">先在左侧菜单<br>选好要做的品类</div>
+      <div class="how-desc">底部菜单选好<br>要做的品类</div>
     </div>
     <div class="how-card">
       <div class="how-icon">🧑‍🤝‍🧑</div>
@@ -103,17 +103,14 @@
 <!-- ===== 商店面板 ===== -->
 <div id="shop-panel">
   <div class="shop-title">🛒 升级商店</div>
-
   <div class="shop-section">
     <div class="shop-section-title">🏗️ 制作台扩展</div>
     <div id="shop-stations"><!-- 动态渲染 --></div>
   </div>
-
   <div class="shop-section">
     <div class="shop-section-title">⚡ 咖啡机提速</div>
     <div id="shop-machine"><!-- 动态渲染 --></div>
   </div>
-
   <div class="shop-section">
     <div class="shop-section-title">🪑 等候区扩容</div>
     <div id="shop-waitroom"><!-- 动态渲染 --></div>
@@ -124,6 +121,45 @@
 <div id="gw">
   <div class="ttl">🐱 猫咪咖啡馆 🍵</div>
   <div class="sub">Cat Café · Pixel Edition v3</div>
+
+  <!-- ========== 手机端专属区域（桌面隐藏）========== -->
+
+  <!-- 手机顶部状态栏 -->
+  <div id="mob-statusbar" style="display:none">
+    <div class="msb-item">
+      <div class="msb-val" id="mob-coins">0</div>
+      <div>💰 金币</div>
+    </div>
+    <div class="msb-item">
+      <div class="msb-val" id="mob-lv">Lv.1</div>
+      <div class="msb-bar"><div class="msb-bar-fill" id="mob-ebar" style="width:0%;background:linear-gradient(90deg,#ffb3d9,#ff69b0)"></div></div>
+    </div>
+    <div class="msb-item">
+      <div class="msb-val" id="mob-hap">😸</div>
+      <div class="msb-bar"><div class="msb-bar-fill" id="mob-hbar" style="width:80%;background:linear-gradient(90deg,#ff9ec8,#ff69b0)"></div></div>
+    </div>
+    <div class="msb-item">
+      <div class="msb-val" id="mob-cus">0</div>
+      <div>👥 顾客</div>
+    </div>
+    <div class="msb-item">
+      <div class="msb-val" id="mob-done">0单</div>
+      <div>📋 完成</div>
+    </div>
+  </div>
+
+  <!-- 手机连击条 -->
+  <div id="mob-combo-bar" style="display:none">
+    <span id="mob-combo-txt"></span>
+    <span id="mob-bond-txt" style="font-size:9px;color:#d4689a;font-weight:700"></span>
+  </div>
+
+  <!-- 手机 Canvas 区域 -->
+  <div id="mob-canvas-wrap" style="display:none">
+    <canvas id="cv" width="405" height="390"></canvas>
+  </div>
+
+  <!-- ========== 桌面端三列布局（手机隐藏）========== -->
   <div id="gc">
     <!-- 左侧菜单 -->
     <div class="pnl pl">
@@ -158,23 +194,18 @@
       </div>
       <hr style="border:none;border-top:2px dashed #f5c6de;margin:2px 0">
       <div class="ptt" style="font-size:10px">🐾 互动</div>
-      <div class="mi pet-btn-left" onclick="petCat()" style="justify-content:center;gap:7px">
+      <div class="mi" onclick="petCat()" style="justify-content:center;gap:7px">
         <span style="font-size:15px">😺</span>
         <span style="font-size:10px;font-weight:700;color:#885588">摸摸猫咪</span>
       </div>
     </div>
 
-    <!-- 游戏画布 -->
-    <canvas id="cv" width="405" height="390"></canvas>
+    <!-- 游戏画布占位（桌面），canvas 由 JS 动态移入 -->
+    <div id="cv-placeholder" style="line-height:0"></div>
 
     <!-- 右侧状态 -->
     <div class="pnl pr">
       <div class="ptt">📊 经营状态</div>
-      <!-- 移动端：摸猫按钮出现在右面板顶部 -->
-      <div class="mi pet-btn-right" onclick="petCat()" style="justify-content:center;gap:7px;display:none">
-        <span style="font-size:15px">😺</span>
-        <span style="font-size:10px;font-weight:700;color:#885588">摸摸猫咪</span>
-      </div>
       <div class="sr"><div class="sl">💰 金币</div><div class="sv" id="sv-c">0</div></div>
       <hr class="dv">
       <div class="sr">
@@ -197,11 +228,8 @@
       <hr class="dv">
       <div style="font-size:9px;color:#b07ab0;font-weight:700;text-align:center">📋 完成订单</div>
       <div class="sv" id="sv-ord" style="font-size:13px;text-align:center">0 单</div>
-
-      <!-- v3: 制作台计数 -->
       <hr class="dv">
       <div id="station-count-label">制作台 ×1</div>
-
       <!-- v3: 猫咪亲密度 & 技能 -->
       <div id="bond-section">
         <div id="bond-label">🐱 亲密度 <span id="bond-val">0</span></div>
@@ -229,6 +257,49 @@
 
   <!-- 消息条 -->
   <div id="ma"><div class="mb" id="msgbox">欢迎光临猫咪咖啡馆！等待顾客到来吧 🌸</div></div>
+
+  <!-- 手机底部菜单条 -->
+  <div id="mob-menu" style="display:none">
+    <div class="mob-mi sel" id="mob-mi-latte" onclick="selItem('latte')">
+      <span class="mob-ie">☕</span>
+      <div class="mob-in">拿铁</div>
+      <div class="mob-ip">+12💰</div>
+    </div>
+    <div class="mob-mi" id="mob-mi-cake" onclick="selItem('cake')">
+      <span class="mob-ie">🍰</span>
+      <div class="mob-in">蛋糕</div>
+      <div class="mob-ip">+20💰</div>
+    </div>
+    <div class="mob-mi" id="mob-mi-macaron" onclick="selItem('macaron')">
+      <span class="mob-ie">🫧</span>
+      <div class="mob-in">马卡龙</div>
+      <div class="mob-ip">+15💰</div>
+    </div>
+    <div class="mob-mi dis" id="mob-mi-parfait" onclick="selItem('parfait')">
+      <span class="mob-ie">🍧</span>
+      <div class="mob-in">芭菲</div>
+      <div class="mob-ip">🔒 Lv.3</div>
+    </div>
+    <div class="mob-mi dis" id="mob-mi-catcookie" onclick="selItem('catcookie')">
+      <span class="mob-ie">🐾</span>
+      <div class="mob-in">饼干</div>
+      <div class="mob-ip">🔒 Lv.5</div>
+    </div>
+    <div class="mob-mi dis" id="mob-mi-pudding" onclick="selItem('pudding')">
+      <span class="mob-ie">🍮</span>
+      <div class="mob-in">布丁</div>
+      <div class="mob-ip">🔒 Lv.7</div>
+    </div>
+    <div class="mob-mi dis" id="mob-mi-waffle" onclick="selItem('waffle')">
+      <span class="mob-ie">🧇</span>
+      <div class="mob-in">华夫</div>
+      <div class="mob-ip">🔒 Lv.9</div>
+    </div>
+    <div class="mob-pet" onclick="petCat()">
+      <span class="mob-ie">😺</span>
+      <div class="mob-in" style="font-size:8px;color:#885588">摸猫</div>
+    </div>
+  </div>
 
   <!-- 控制栏 -->
   <div id="ctrl-row">
