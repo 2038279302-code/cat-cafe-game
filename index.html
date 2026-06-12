@@ -2,7 +2,6 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<!-- 移动端：禁止用户缩放，保证像素级清晰显示 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,9 +17,9 @@
 <div id="ss">
   <div style="font-size:58px;animation:tb 1.5s ease-in-out infinite;line-height:1">🐱</div>
   <div class="st">猫咪咖啡馆</div>
-  <div style="font-size:10px;color:#b07ab0;letter-spacing:3px;margin-bottom:2px">Cat Café · Pixel Edition ✨</div>
+  <div style="font-size:10px;color:#b07ab0;letter-spacing:3px;margin-bottom:2px">Cat Café · Pixel Edition v3 ✨</div>
 
-  <!-- 历史最佳成绩（有存档才显示） -->
+  <!-- 历史最佳成绩 -->
   <div id="best-record">
     <div class="br-title">🏆 历史最佳</div>
     <div class="br-row">
@@ -48,12 +47,12 @@
       <div class="how-desc">菜品匹配后点击<br>顾客开始烹饪</div>
     </div>
     <div class="how-card">
-      <div class="how-icon">⏱️</div>
-      <div class="how-title">④ 别让等太久</div>
-      <div class="how-desc">进度条变红就要<br>快点完成订单！</div>
+      <div class="how-icon">🏗️</div>
+      <div class="how-title">④ 解锁升级</div>
+      <div class="how-desc">用金币解锁多台<br>摸猫解锁技能！</div>
     </div>
   </div>
-  <div class="tip-row">👑 VIP顾客耐心×1.5，完成给小费 &nbsp;·&nbsp; ⚡ 急性子只等10秒，但奖励翻倍<br>🔥 连续接单获连击加成 &nbsp;·&nbsp; 💾 成绩自动存档</div>
+  <div class="tip-row">👑 VIP顾客耐心×1.5，完成给小费 &nbsp;·&nbsp; ⚡ 急性子只等10秒，但奖励翻倍<br>🔥 连续接单获连击加成 &nbsp;·&nbsp; 🏗️ 解锁多制作台同时制作 &nbsp;·&nbsp; 🐱 摸猫解锁技能</div>
   <button class="sbtn" onclick="startGame()">开始经营！🌸</button>
 </div>
 
@@ -101,12 +100,32 @@
   </div>
 </div>
 
+<!-- ===== 商店面板 ===== -->
+<div id="shop-panel">
+  <div class="shop-title">🛒 升级商店</div>
+
+  <div class="shop-section">
+    <div class="shop-section-title">🏗️ 制作台扩展</div>
+    <div id="shop-stations"><!-- 动态渲染 --></div>
+  </div>
+
+  <div class="shop-section">
+    <div class="shop-section-title">⚡ 咖啡机提速</div>
+    <div id="shop-machine"><!-- 动态渲染 --></div>
+  </div>
+
+  <div class="shop-section">
+    <div class="shop-section-title">🪑 等候区扩容</div>
+    <div id="shop-waitroom"><!-- 动态渲染 --></div>
+  </div>
+</div>
+
 <!-- ===== 主游戏界面 ===== -->
 <div id="gw">
   <div class="ttl">🐱 猫咪咖啡馆 🍵</div>
-  <div class="sub">Cat Café · Pixel Edition</div>
+  <div class="sub">Cat Café · Pixel Edition v3</div>
   <div id="gc">
-    <!-- 左侧菜单（移动端时与右侧面板同行） -->
+    <!-- 左侧菜单 -->
     <div class="pnl pl">
       <div class="ptt">✨ 今日菜单</div>
       <div class="mi sel" id="mi-latte" onclick="selItem('latte')">
@@ -128,6 +147,14 @@
       <div class="mi dis" id="mi-catcookie" onclick="selItem('catcookie')">
         <span class="ie">🐾</span>
         <div class="ii"><div class="in">猫爪饼干</div><div class="ip">💰 +28</div><div class="it">🔒 Lv.5</div></div>
+      </div>
+      <div class="mi dis" id="mi-pudding" onclick="selItem('pudding')">
+        <span class="ie">🍮</span>
+        <div class="ii"><div class="in">猫咪布丁</div><div class="ip">💰 +42</div><div class="it">🔒 Lv.7</div></div>
+      </div>
+      <div class="mi dis" id="mi-waffle" onclick="selItem('waffle')">
+        <span class="ie">🧇</span>
+        <div class="ii"><div class="in">彩虹华夫饼</div><div class="ip">💰 +50</div><div class="it">🔒 Lv.9</div></div>
       </div>
       <hr style="border:none;border-top:2px dashed #f5c6de;margin:2px 0">
       <div class="ptt" style="font-size:10px">🐾 互动</div>
@@ -165,6 +192,33 @@
       <hr class="dv">
       <div style="font-size:9px;color:#b07ab0;font-weight:700;text-align:center">📋 完成订单</div>
       <div class="sv" id="sv-ord" style="font-size:13px;text-align:center">0 单</div>
+
+      <!-- v3: 制作台计数 -->
+      <hr class="dv">
+      <div id="station-count-label">制作台 ×1</div>
+
+      <!-- v3: 猫咪亲密度 & 技能 -->
+      <div id="bond-section">
+        <div id="bond-label">🐱 亲密度 <span id="bond-val">0</span></div>
+        <div class="bond-bg"><div id="bond-bar" style="width:0%"></div></div>
+        <div class="skills-list">
+          <div class="skill-item skill-locked" id="skill-bell">
+            <span class="skill-icon">🔔</span>
+            <span class="skill-name">招呼天赋</span>
+            <span class="skill-req">♥5</span>
+          </div>
+          <div class="skill-item skill-locked" id="skill-swift">
+            <span class="skill-icon">✨</span>
+            <span class="skill-name">灵爪加速</span>
+            <span class="skill-req">♥15</span>
+          </div>
+          <div class="skill-item skill-locked" id="skill-help">
+            <span class="skill-icon">🐾</span>
+            <span class="skill-name">猫咪帮厨</span>
+            <span class="skill-req">♥30</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -174,6 +228,7 @@
   <!-- 控制栏 -->
   <div id="ctrl-row">
     <button class="cbtn" id="btn-pause" onclick="togglePause()">⏸ 暂停</button>
+    <button class="cbtn shop-btn-toggle" onclick="toggleShop()">🛒 商店</button>
     <button class="cbtn close-shop" onclick="closeShop()">🌙 打烊结算</button>
     <button class="cbtn" onclick="restartGame()">🔄 重新开始</button>
   </div>
@@ -192,7 +247,7 @@
 <!-- 飘字容器 -->
 <div id="ftc"></div>
 
-<!-- ===== JS 模块（顺序加载，有依赖关系） ===== -->
+<!-- ===== JS 模块 ===== -->
 <script src="js/data.js"></script>
 <script src="js/state.js"></script>
 <script src="js/draw.js"></script>

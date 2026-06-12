@@ -320,14 +320,37 @@ function drawPts(){
   })
 }
 
-// ===== 制作进度条 =====
+// ===== 制作进度条（多台并行）=====
 function drawMakeBar(){
-  if(!G.making||!G.makeTgt||!G.makingItem)return;
-  const it=G.makingItem;
-  const pct=Math.max(0,Math.min(1,1-G.makeT/it.t));
-  const bx=152,by=370,bw=102,bh=13;
-  rr(bx,by,bw,bh,6,'#fff0f7','#f5c6de',2);
-  if(pct>0)rr(bx,by,bw*pct,bh,6,'#ff69b0',null);
-  ctx.save();ctx.fillStyle='#885588';ctx.font='bold 9px Arial';ctx.textAlign='center';
-  ctx.fillText(it.e+' 制作中 '+Math.round(pct*100)+'%',bx+bw/2,by+bh/2+3);ctx.restore()
+  const active = G.stations.filter(s=>s.making && s.makeTgt && s.makingItem);
+  if(!active.length) return;
+
+  const total = active.length;
+  // 根据台数均分底部区域：总宽 ~310px，居中
+  const totalW = 310;
+  const gap = 6;
+  const bw = Math.floor((totalW - gap*(total-1)) / total);
+  const bh = 14;
+  const startX = (405 - totalW) / 2;
+  const by = 369;
+
+  // 进度条颜色区分台序
+  const barColors = ['#ff69b0','#7ec8e3','#f8b500'];
+
+  active.forEach((st, idx)=>{
+    const it = st.makingItem;
+    const pct = Math.max(0, Math.min(1, 1 - st.makeT / it.t));
+    const bx = startX + idx*(bw+gap);
+    const col = barColors[idx % barColors.length];
+
+    rr(bx, by, bw, bh, 6, '#fff0f7', '#f5c6de', 1.5);
+    if(pct>0) rr(bx, by, bw*pct, bh, 6, col, null);
+    ctx.save();
+    ctx.fillStyle='#885588';
+    ctx.font='bold 8px Arial';
+    ctx.textAlign='center';
+    const label = it.e+' '+ Math.round(pct*100)+'%' + (total>1?' #'+(idx+1):'');
+    ctx.fillText(label, bx+bw/2, by+bh/2+3);
+    ctx.restore();
+  });
 }

@@ -242,3 +242,124 @@ body{
   .pause-title{font-size:26px}
   .pbtn{font-size:12px;padding:9px 22px;min-width:110px}
 }
+
+/* ====================================================
+   v3 — 商店面板
+   ==================================================== */
+
+/* 商店按钮（控制栏里）*/
+.cbtn.shop-btn-toggle{
+  background:linear-gradient(135deg,#fff8e8,#fff3d0);
+  border-color:#e8c840;color:#a07000;
+}
+.cbtn.shop-btn-toggle:hover{background:linear-gradient(135deg,#fff0c0,#ffe89a)}
+
+/* 商店弹出面板 */
+#shop-panel{
+  display:none;
+  position:fixed;
+  bottom:68px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:200;
+  background:linear-gradient(160deg,#fffdf0,#fff8e8);
+  border:3px solid #e8c840;
+  border-radius:20px;
+  padding:14px 16px;
+  width:320px;
+  max-width:96vw;
+  box-shadow:0 8px 30px rgba(180,140,0,.22);
+  animation:shopIn .25s cubic-bezier(.175,.885,.32,1.275);
+}
+#shop-panel.show{display:block}
+@keyframes shopIn{
+  from{transform:translateX(-50%) scale(.85) translateY(12px);opacity:0}
+  to{transform:translateX(-50%) scale(1) translateY(0);opacity:1}
+}
+.shop-title{
+  font-size:14px;font-weight:900;color:#a07000;
+  text-align:center;margin-bottom:10px;
+  border-bottom:2px dashed #e8c840;padding-bottom:6px;
+}
+.shop-section{
+  margin-bottom:9px;
+}
+.shop-section-title{
+  font-size:10px;font-weight:900;color:#c09000;margin-bottom:4px;display:flex;align-items:center;gap:4px;
+}
+.shop-btn{
+  background:linear-gradient(135deg,#fff8d0,#ffe88a);
+  border:2px solid #e8c840;border-radius:10px;
+  padding:6px 10px;font-size:10.5px;font-weight:700;color:#805500;
+  cursor:pointer;width:100%;text-align:left;transition:all .15s;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.shop-btn:hover{background:linear-gradient(135deg,#fff0a0,#ffd860);transform:translateY(-1px)}
+.shop-btn.disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
+.shop-cost{
+  background:rgba(255,220,80,.4);
+  border-radius:6px;padding:2px 7px;
+  font-size:10px;font-weight:900;color:#a06000;white-space:nowrap;
+}
+.shop-maxed{
+  font-size:10px;color:#60a060;font-weight:700;padding:4px 0;display:block;
+}
+
+/* ====================================================
+   v3 — 猫咪亲密度 & 技能
+   ==================================================== */
+#bond-section{
+  margin-top:3px;
+  border-top:2px dashed #f5c6de;
+  padding-top:5px;
+}
+#bond-label{
+  font-size:9px;color:#b07ab0;font-weight:700;
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:3px;
+}
+#bond-label span{color:#d4689a;font-weight:900}
+.bond-bg{
+  background:#fde8f2;border-radius:5px;height:7px;
+  overflow:hidden;border:1px solid #f5c6de;margin-bottom:5px;
+}
+#bond-bar{
+  height:100%;border-radius:5px;
+  background:linear-gradient(90deg,#ffb3d9,#ff69b0,#e840a0);
+  transition:width .5s;
+}
+.skills-list{
+  display:flex;flex-direction:column;gap:3px;
+}
+.skill-item{
+  display:flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.6);
+  border:1.5px solid #f5c6de;
+  border-radius:9px;padding:4px 7px;
+  font-size:9px;color:#885588;
+  transition:all .2s;
+}
+.skill-item.skill-active{
+  background:linear-gradient(135deg,#fff0f7,#ffd6e7);
+  border-color:#ff69b0;color:#d4689a;
+  box-shadow:0 2px 8px rgba(212,104,154,.2);
+}
+.skill-item.skill-locked{
+  opacity:.4;
+}
+.skill-icon{font-size:13px}
+.skill-name{font-weight:900;flex:1}
+.skill-desc{font-size:8.5px;color:#c0a0c0}
+.skill-req{font-size:8px;color:#e08020;font-weight:700;white-space:nowrap}
+
+/* 制作台数量标签 */
+#station-count-label{
+  font-size:9px;color:#a07000;font-weight:700;
+  text-align:center;padding:2px 0;
+}
+
+/* 商店面板移动端适配 */
+@media (max-width:480px){
+  #shop-panel{width:min(310px,96vw);padding:11px 12px;bottom:58px}
+  .shop-btn{font-size:9.5px;padding:5px 8px}
+}
