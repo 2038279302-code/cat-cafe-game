@@ -118,7 +118,7 @@ function loop(now){
   requestAnimationFrame(loop);
   const dt=Math.min(now-lastTime, 50);
   lastTime=now;
-  ctx.clearRect(0,0,405,390);
+  ctx.clearRect(0,0,cv.width,cv.height);
   drawScene();
 
   if(!G.running){G.catF++;drawCat();return;}
