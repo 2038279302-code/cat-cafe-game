@@ -1,0 +1,316 @@
+// ====================================================
+// game.js — 核心游戏逻辑：主循环、顾客系统、订单、状态控制
+// 依赖：data.js, state.js, draw.js, ui.js, save.js
+// ====================================================
+
+let lastTime = 0;
+
+// ===== 背景气泡初始化 =====
+function initBubbles(){
+  const c=['#ffb3d9','#e8c8f8','#b8e0f8','#ffd6a0','#c8f0d8'];
+  for(let i=0;i<12;i++){
+    const b=document.createElement('div');b.className='bb';
+    const s=18+Math.random()*50;
+    b.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;background:${c[i%c.length]};animation-duration:${9+Math.random()*13}s;animation-delay:${-Math.random()*20}s`;
+    document.getElementById('bgB').appendChild(b);
+  }
+}
+
+// ===== 顾客生成 =====
+// VIP   概率 20%：等待时间×1.5，完成后+小费
+// 急性子 概率 20%：等待时间 9000~11000ms，完成后双倍金币
+function spawnCust(now){
+  if(G.custs.length>=3)return;
+  const used = new Set(G.custs.map(c=>c.seat));
+  const free = [0,1,2].filter(i=>!used.has(i));
+  if(!free.length)return;
+  const si  = free[Math.floor(Math.random()*free.length)];
+  const pos = SEATS[si];
+  const type  = Math.floor(Math.random()*4);
+  const avail = Object.keys(ITEMS).filter(k=>ITEMS[k].lv<=G.lv);
+  const order = avail[Math.floor(Math.random()*avail.length)]||'latte';
+  const id    = now+Math.random();
+
+  const roll = Math.random();
+  let custType='normal', wt;
+  if(roll<0.20){
+    custType='vip';
+    wt=(14000+Math.random()*9000)*1.5;
+  } else if(roll<0.40){
+    custType='impatient';
+    wt=9000+Math.random()*2000;
+  } else {
+    wt=14000+Math.random()*9000;
+  }
+
+  G.custs.push({
+    id, x:pos.x, y:pos.y, seat:si, type, order,
+    mood:'normal', frame:Math.random()*100,
+    waitTotal:wt, waitLeft:wt, waitPct:1,
+    arriving:true, arrP:0,
+    custType
+  });
+  G.totalCus++;
+  G.lastCusT=now;
+  G.cusInt=Math.max(2500, 5500-G.lv*400);
+}
+
+// ===== 完成订单 =====
+function completeOrder(c){
+  if(!c)return;
+  const it = ITEMS[c.order];
+  if(!it)return;
+  const wb = c.waitPct>.6?1.3:c.waitPct>.3?1.0:.7;
+  G.combo++;
+  if(G.combo>G.maxComboThisRun) G.maxComboThisRun=G.combo;
+  const cb = G.combo>=10?2.0:G.combo>=5?1.5:G.combo>=3?1.2:1.0;
+  let earned = Math.round(it.p*wb*cb*(0.9+G.hap/500));
+
+  let bonusMsg='';
+  if(c.custType==='impatient'){
+    earned = earned*2;
+    bonusMsg=' ⚡ 急性子双倍！';
+  } else if(c.custType==='vip'){
+    const tip = Math.round(it.p*0.5);
+    earned += tip;
+    bonusMsg=' 👑 VIP小费 +'+tip+'💰';
+  }
+
+  G.coins+=earned; G.done++;
+  if(G.comboTmr)clearTimeout(G.comboTmr);
+  G.comboTmr=setTimeout(()=>{G.combo=0;updateUI()}, 6000);
+  const eg=Math.round(it.exp*cb); G.exp+=eg;
+  while(G.exp>=G.expMax){G.exp-=G.expMax;G.lv++;G.expMax=Math.round(50*Math.pow(1.5,G.lv-1));doLevelUp()}
+  G.hap=Math.min(100,G.hap+3);
+  c.mood='happy';
+  spawnPts(c.x,c.y-28,it.col,12);spawnHrt(c.x,c.y-40);
+  const baseMsg='+'+earned+'💰'+(G.combo>=3?' 🔥x'+G.combo+' 连击！':'');
+  showMsg(baseMsg+bonusMsg);
+  floatText('+'+earned+'💰', c.x, c.y-48, '#d4689a');
+  if(G.combo>=3) floatText('x'+G.combo+' COMBO!', c.x, c.y-68, '#ff4499');
+  const cid=c.id;
+  setTimeout(()=>{G.custs=G.custs.filter(u=>u.id!==cid)}, 1100);
+  checkAch(); updateUI();
+}
+
+// ===== 主循环 =====
+function loop(now){
+  requestAnimationFrame(loop);
+  const dt=Math.min(now-lastTime, 50);
+  lastTime=now;
+  ctx.clearRect(0,0,405,390);
+  drawScene();
+
+  if(!G.running){G.catF++;drawCat();return;}
+  G.tick++;
+
+  if(G.making&&G.makeTgt&&!G.paused){
+    G.makeT-=dt;
+    if(G.makeT<=0){
+      G.making=false;const tgt=G.makeTgt;G.makeTgt=null;G.makingItem=null;completeOrder(tgt);
+    }
+  }
+  if(!G.paused&&now-G.lastCusT>G.cusInt) spawnCust(now);
+
+  const removeIds=new Set();
+  for(let i=0;i<G.custs.length;i++){
+    const c=G.custs[i];c.frame++;
+    if(c.arriving){
+      if(!G.paused){c.arrP=Math.min(c.arrP+.04,1);if(c.arrP>=1)c.arriving=false;}
+      continue;
+    }
+    if(G.paused)continue;
+    if(G.making&&G.makeTgt&&G.makeTgt.id===c.id)continue;
+    c.waitLeft-=dt;c.waitPct=Math.max(0,c.waitLeft/c.waitTotal);
+    if(c.waitPct<.3&&c.mood==='normal')c.mood='angry';
+    if(c.waitLeft<=0){
+      G.hap=Math.max(0,G.hap-6);G.combo=0;G.missedCus++;
+      showMsg(['顾客等太久离开了 😢','没有及时完成订单，顾客走了...','猫咪也难过了 😿'][Math.floor(Math.random()*3)]);
+      removeIds.add(c.id);updateUI();
+    }
+  }
+  if(removeIds.size>0){
+    G.custs=G.custs.filter(c=>!removeIds.has(c.id));
+    if(G.makeTgt&&removeIds.has(G.makeTgt.id)){G.making=false;G.makeTgt=null;G.makingItem=null;showMsg('制作中的顾客离开了... 😿');}
+  }
+
+  const snap=G.custs.slice();
+  for(let i=0;i<snap.length;i++) drawCust(snap[i]);
+  G.catF++;if(G.petting)G.petT++;drawCat();
+  updatePts();drawPts();drawMakeBar();
+}
+
+// ===== 点击画布（含移动端触摸） =====
+function handleCanvasClick(clientX, clientY){
+  if(!G.running||G.paused)return;
+  if(G.making)return;
+  const r=cv.getBoundingClientRect();
+  const scaleX = cv.width  / r.width;
+  const scaleY = cv.height / r.height;
+  const mx=(clientX-r.left)*scaleX;
+  const my=(clientY-r.top)*scaleY;
+  for(let i=0;i<G.custs.length;i++){
+    const c=G.custs[i];
+    if(c.arriving)continue;
+    const dx=mx-c.x,dy=my-c.y;
+    if(dx*dx+dy*dy<38*38){
+      if(c.order!==G.sel){
+        showMsg(['先选好菜品再点顾客哦！😅','请先在左边选择对应品类！🌸','哎呀点错啦！看看顾客要什么 👀'][Math.floor(Math.random()*3)]);
+        c.mood='angry';
+        const cid=c.id;
+        setTimeout(()=>{const tc=G.custs.find(u=>u.id===cid);if(tc&&tc.mood==='angry')tc.mood='normal';},1500);
+        return;
+      }
+      G.making=true;G.makeTgt=c;G.makingItem=ITEMS[c.order];G.makeT=G.makingItem.t;
+      if(c.custType==='vip')          showMsg('为VIP顾客制作中 👑 别让贵宾久等！');
+      else if(c.custType==='impatient') showMsg('急性子！快！⚡ '+G.makingItem.e+' 制作中...');
+      else                               showMsg('正在制作 '+G.makingItem.e+' 请稍等...');
+      return;
+    }
+  }
+}
+
+function bindCanvasEvents(){
+  // 鼠标点击
+  cv.addEventListener('click', e=>{
+    handleCanvasClick(e.clientX, e.clientY);
+  });
+  // 触摸（移动端）
+  cv.addEventListener('touchend', e=>{
+    e.preventDefault();
+    if(e.changedTouches.length>0){
+      const t=e.changedTouches[0];
+      handleCanvasClick(t.clientX, t.clientY);
+    }
+  }, {passive:false});
+}
+
+// ===== 开始游戏 =====
+function startGame(){
+  document.getElementById('ss').style.display='none';
+  document.getElementById('ctrl-row').style.display='flex';
+  G.running=true;G.paused=false;
+  G.lastCusT=performance.now();lastTime=performance.now();
+  showMsg('欢迎光临！选好菜品，等顾客来吧 🌸');
+}
+
+// ===== 暂停/继续 =====
+function togglePause(){
+  if(!G.running)return;
+  G.paused=!G.paused;
+  const btn=document.getElementById('btn-pause');
+  const overlay=document.getElementById('pause-overlay');
+  if(G.paused){
+    btn.textContent='▶ 继续';btn.classList.add('pause-active');
+    overlay.classList.add('show');showMsg('游戏已暂停 ⏸');
+  } else {
+    btn.textContent='⏸ 暂停';btn.classList.remove('pause-active');
+    overlay.classList.remove('show');lastTime=performance.now();showMsg('继续营业！加油 🌸');
+  }
+}
+function resumeGame(){if(G.paused)togglePause();}
+
+// ===== 打烊结算 =====
+function calcGrade(){
+  const total=G.done+G.missedCus;
+  const completionRate=total>0?(G.done/total):1;
+  let score=0;
+  score+=completionRate*40;
+  if(G.maxComboThisRun>=10)score+=30;
+  else if(G.maxComboThisRun>=5)score+=20;
+  else if(G.maxComboThisRun>=3)score+=12;
+  else score+=5;
+  score+=Math.min(G.lv*4,20);
+  if(G.coins>=500)score+=10;
+  else if(G.coins>=200)score+=7;
+  else if(G.coins>=80)score+=4;
+  else score+=1;
+  if(score>=88)return 'S';
+  if(score>=70)return 'A';
+  if(score>=50)return 'B';
+  return 'C';
+}
+
+function gradeInfo(grade){
+  const map={
+    S:{cls:'grade-s',label:'传奇店长！✨ 近乎完美的经营！'},
+    A:{cls:'grade-a',label:'优秀店员！🌟 顾客们都很满意～'},
+    B:{cls:'grade-b',label:'还不错哦 😊 继续加油！'},
+    C:{cls:'grade-c',label:'今天有点累？😅 明天再来～'}
+  };
+  return map[grade]||map['C'];
+}
+
+function buildHighlights(grade){
+  const lines=[];
+  if(G.maxComboThisRun>=10) lines.push('🌈 达成10连击传说！');
+  else if(G.maxComboThisRun>=5) lines.push('🔥 最高连击 x'+G.maxComboThisRun+'！');
+  if(G.missedCus===0&&G.done>0) lines.push('💯 今天没有顾客等太久，全勤满意！');
+  else if(G.missedCus>0)        lines.push('😢 有 '+G.missedCus+' 位顾客没有等到服务');
+  if(G.petted>0)  lines.push('😻 摸了 '+G.petted+' 次猫咪，猫咪很开心');
+  if(G.lv>=3)     lines.push('⭐ 解锁了 Lv.'+G.lv+'，新菜品已上线');
+  if(lines.length===0) lines.push('☕ 今天招待了 '+G.done+' 位顾客，辛苦啦！');
+  return lines.join('\n');
+}
+
+function closeShop(){
+  if(!G.running)return;
+  G.paused=true;G.running=false;
+  const grade=calcGrade();
+  const info=gradeInfo(grade);
+  const best=updateBestRecord(G.coins,G.maxComboThisRun,G.lv,grade);
+  const badgeEl=document.getElementById('rp-grade-badge');
+  badgeEl.textContent=grade;badgeEl.className='grade-badge '+info.cls;
+  document.getElementById('rp-grade-label').textContent=info.label;
+  document.getElementById('rp-coins').innerHTML=G.coins+(best.coins===G.coins&&G.coins>0?'<span class="rp-new">NEW</span>':'');
+  document.getElementById('rp-cus').textContent=G.totalCus;
+  document.getElementById('rp-done').textContent=G.done;
+  document.getElementById('rp-combo').innerHTML=G.maxComboThisRun+(best.maxCombo===G.maxComboThisRun&&G.maxComboThisRun>0?'<span class="rp-new">NEW</span>':'');
+  document.getElementById('rp-highlight').textContent=buildHighlights(grade);
+  const now=new Date();
+  document.getElementById('rp-date').textContent=`${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()}  Cat Café · Daily Report`;
+  document.getElementById('pause-overlay').classList.remove('show');
+  document.getElementById('report-overlay').classList.add('show');
+}
+
+// 结算后再来一局
+function restartFromReport(){
+  document.getElementById('report-overlay').classList.remove('show');
+  restartGame();
+}
+// 结算后回首页
+function returnToTitle(){
+  document.getElementById('report-overlay').classList.remove('show');
+  document.getElementById('ss').style.display='flex';
+  document.getElementById('ctrl-row').style.display='none';
+  initBestDisplay();
+  resetG();
+  updateUI();
+}
+
+// ===== 重新开始 =====
+function restartGame(){
+  resetG();
+  document.querySelectorAll('.mi').forEach(m=>m.classList.remove('sel'));
+  document.getElementById('mi-latte').classList.add('sel');
+  document.getElementById('mi-parfait').classList.add('dis');
+  document.getElementById('mi-parfait').querySelector('.it').textContent='🔒 Lv.3';
+  document.getElementById('mi-catcookie').classList.add('dis');
+  document.getElementById('mi-catcookie').querySelector('.it').textContent='🔒 Lv.5';
+  document.getElementById('pause-overlay').classList.remove('show');
+  document.getElementById('btn-pause').textContent='⏸ 暂停';
+  document.getElementById('btn-pause').classList.remove('pause-active');
+  document.getElementById('ctrl-row').style.display='flex';
+  lastTime=performance.now();
+  updateUI();
+  showMsg('重新出发！加油经营猫咪咖啡馆 🌸');
+}
+
+// ===== 页面加载入口 =====
+window.addEventListener('DOMContentLoaded', ()=>{
+  initCanvas();
+  initBubbles();
+  bindCanvasEvents();
+  initBestDisplay();
+  requestAnimationFrame(loop);
+});
