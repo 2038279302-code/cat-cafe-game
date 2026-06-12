@@ -1,4 +1,4 @@
-# 🐱 猫咪咖啡馆 · Cat Café Pixel Edition v3
+# 🐱 猫咪咖啡馆 · Cat Café Pixel
 
 > 一款像素风格的咖啡馆经营模拟小游戏，支持电脑和手机游玩。
 
